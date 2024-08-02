@@ -10,16 +10,16 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.transferservice.dto.CreateCustomerDTO;
-import org.transferservice.dto.CustomerDTO;
+import org.transferservice.dto.CreateAccountDTO;
+import org.transferservice.dto.AccountDTO;
 import org.transferservice.dto.LoginRequestDTO;
 import org.transferservice.dto.LoginResponseDTO;
-import org.transferservice.dto.enums.AccountCurrency;
-import org.transferservice.exception.custom.CustomerAlreadyExistException;
+import org.transferservice.dto.enums.CardCurrency;
+import org.transferservice.exception.custom.AccountAlreadyExistException;
+import org.transferservice.model.Card;
 import org.transferservice.model.Account;
-import org.transferservice.model.Customer;
+import org.transferservice.repository.CardRepository;
 import org.transferservice.repository.AccountRepository;
-import org.transferservice.repository.CustomerRepository;
 
 import java.security.SecureRandom;
 
@@ -28,46 +28,46 @@ import java.security.SecureRandom;
 @RequiredArgsConstructor
 public class AuthenticatorService implements IAuthenticator {
 
-    private final CustomerRepository customerRepository;
     private final AccountRepository accountRepository;
+    private final CardRepository cardRepository;
     private final PasswordEncoder encoder;
     private final AuthenticationManager authenticationManager;
     private final JwtUtils jwtUtils;
 
     @Override
     @Transactional
-    public CustomerDTO register(CreateCustomerDTO createCustomerDTO) throws CustomerAlreadyExistException {
+    public AccountDTO register(CreateAccountDTO createAccountDTO) throws AccountAlreadyExistException {
 
-        if (this.customerRepository.existsByEmail(createCustomerDTO.getEmail())) {
-            throw new CustomerAlreadyExistException(String.format("Customer with email %s already exists", createCustomerDTO.getEmail()));
+        if (this.accountRepository.existsByEmail(createAccountDTO.getEmail())) {
+            throw new AccountAlreadyExistException(String.format("Customer with email %s already exists", createAccountDTO.getEmail()));
         }
 
-        if (this.customerRepository.existsByPhoneNumber(createCustomerDTO.getPhoneNumber())) {
-            throw new CustomerAlreadyExistException(String.format("Customer with phone number %s already exists", createCustomerDTO.getPhoneNumber()));
+        if (this.accountRepository.existsByPhoneNumber(createAccountDTO.getPhoneNumber())) {
+            throw new AccountAlreadyExistException(String.format("Customer with phone number %s already exists", createAccountDTO.getPhoneNumber()));
         }
 
 
-        Account account = Account.builder()
-                .accountNumber(String.valueOf(new SecureRandom().nextInt(1000000000)))
+        Card card = Card.builder()
+                .cardNumber(String.valueOf(new SecureRandom().nextInt(1000000000)))
                 .active(true)
-                .currency(AccountCurrency.EGP)
+                .currency(CardCurrency.EGP)
                 .balance(0.0)
                 .build();
 
 
-        Customer customer = Customer
+        Account account = Account
                 .builder()
-                .email(createCustomerDTO.getEmail())
-                .username(createCustomerDTO.getUsername())
-                .phoneNumber(createCustomerDTO.getPhoneNumber())
-                .gender(createCustomerDTO.getGender())
-                .dateOfBirth(createCustomerDTO.getDateOfBirth())
-                .country(createCustomerDTO.getCountry())
-                .password(this.encoder.encode(createCustomerDTO.getPassword()))
-                .account(this.accountRepository.save(account))
+                .email(createAccountDTO.getEmail())
+                .username(createAccountDTO.getUsername())
+                .phoneNumber(createAccountDTO.getPhoneNumber())
+                .gender(createAccountDTO.getGender())
+                .dateOfBirth(createAccountDTO.getDateOfBirth())
+                .country(createAccountDTO.getCountry())
+                .password(this.encoder.encode(createAccountDTO.getPassword()))
+                .card(this.cardRepository.save(card))
                 .build();
 
-        return this.customerRepository.save(customer).toDTO();
+        return this.accountRepository.save(account).toDTO();
     }
 
     @Override

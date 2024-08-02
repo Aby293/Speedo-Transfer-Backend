@@ -11,31 +11,28 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import org.transferservice.dto.CustomerDTO;
-import org.transferservice.dto.LoginResponseDTO;
-import org.transferservice.dto.UpdateCustomerDTO;
-import org.transferservice.exception.custom.CustomerNotFoundException;
+import org.transferservice.dto.AccountDTO;
+import org.transferservice.dto.UpdateAccountDTO;
+import org.transferservice.exception.custom.AccountNotFoundException;
 import org.transferservice.exception.response.ErrorDetails;
-import org.transferservice.model.Customer;
-import org.transferservice.service.ICustomer;
-import org.transferservice.service.security.AuthTokenFilter;
-import org.transferservice.service.security.TokenBlacklist;
+import org.transferservice.model.Account;
+import org.transferservice.service.IAccount;
 
 @RestController
 @RequiredArgsConstructor
 @Validated
 @Tag(name = "Customer Controller", description = "Customer controller")
-public class CustomerController {
+public class AccountController {
 
-    private final ICustomer customerService;
+    private final IAccount customerService;
 
     @Operation(summary = "Update Customer by ID")
-    @ApiResponse(responseCode = "200", content = {@Content(schema = @Schema(implementation = CustomerDTO.class), mediaType = "application/json")})
+    @ApiResponse(responseCode = "200", content = {@Content(schema = @Schema(implementation = AccountDTO.class), mediaType = "application/json")})
     @ApiResponse(responseCode = "404", content = {@Content(schema = @Schema(implementation = ErrorDetails.class), mediaType = "application/json")})
     @PutMapping("/{id}")
-    public Customer updateCustomer(@PathVariable Long id,
-                                   @RequestBody UpdateCustomerDTO updateCustomerDTO) throws CustomerNotFoundException {
-        return customerService.updateCustomer(id, updateCustomerDTO);
+    public Account updateCustomer(@PathVariable Long id,
+                                  @RequestBody UpdateAccountDTO updateAccountDTO) throws AccountNotFoundException {
+        return customerService.updateAccount(id, updateAccountDTO);
     }
 
     @Operation(summary = "Logout")

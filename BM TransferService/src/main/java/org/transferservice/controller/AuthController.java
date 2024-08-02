@@ -6,22 +6,17 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.cache.annotation.Cacheable;
-import org.springframework.cache.annotation.Caching;
-import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.transferservice.dto.CreateCustomerDTO;
-import org.transferservice.dto.CustomerDTO;
+import org.transferservice.dto.CreateAccountDTO;
+import org.transferservice.dto.AccountDTO;
 import org.transferservice.dto.LoginRequestDTO;
 import org.transferservice.dto.LoginResponseDTO;
-import org.transferservice.exception.custom.CustomerAlreadyExistException;
+import org.transferservice.exception.custom.AccountAlreadyExistException;
 import org.transferservice.exception.response.ErrorDetails;
 import org.transferservice.service.security.IAuthenticator;
 
@@ -34,11 +29,11 @@ public class AuthController {
     private final IAuthenticator authenticatorService;
 
     @Operation(summary = "Register new Customer")
-    @ApiResponse(responseCode = "200", content = {@Content(schema = @Schema(implementation = CustomerDTO.class), mediaType = "application/json")})
+    @ApiResponse(responseCode = "200", content = {@Content(schema = @Schema(implementation = AccountDTO.class), mediaType = "application/json")})
     @ApiResponse(responseCode = "400", content = {@Content(schema = @Schema(implementation = ErrorDetails.class), mediaType = "application/json")})
     @PostMapping("/api/register")
-    public CustomerDTO register(@RequestBody @Valid CreateCustomerDTO createCustomerDTO) throws CustomerAlreadyExistException {
-        return this.authenticatorService.register(createCustomerDTO);
+    public AccountDTO register(@RequestBody @Valid CreateAccountDTO createAccountDTO) throws AccountAlreadyExistException {
+        return this.authenticatorService.register(createAccountDTO);
     }
 
     @Operation(summary = "Login and generate JWT")

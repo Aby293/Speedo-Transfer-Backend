@@ -9,8 +9,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
-import org.transferservice.dto.CreateCustomerDTO;
-import org.transferservice.exception.custom.CustomerAlreadyExistException;
+import org.transferservice.dto.CreateAccountDTO;
+import org.transferservice.exception.custom.AccountAlreadyExistException;
 import org.transferservice.service.security.IAuthenticator;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -49,8 +49,8 @@ class AuthenticationControllerTest {
     @Test
     void testRegisterWithAlreadyExistingUser() throws Exception {
 
-        Mockito.when(this.authenticator.register(any(CreateCustomerDTO.class)))
-                .thenThrow(new CustomerAlreadyExistException("User already exists"));
+        Mockito.when(this.authenticator.register(any(CreateAccountDTO.class)))
+                .thenThrow(new AccountAlreadyExistException("User already exists"));
 
         mockMvc.perform(post("/api/register")
                         .contentType(MediaType.APPLICATION_JSON)

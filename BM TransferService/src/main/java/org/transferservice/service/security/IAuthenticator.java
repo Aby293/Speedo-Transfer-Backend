@@ -1,23 +1,21 @@
 package org.transferservice.service.security;
 
-import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.http.ResponseEntity;
-import org.transferservice.dto.CreateCustomerDTO;
-import org.transferservice.dto.CustomerDTO;
+import org.transferservice.dto.CreateAccountDTO;
+import org.transferservice.dto.*;
 import org.transferservice.dto.LoginRequestDTO;
 import org.transferservice.dto.LoginResponseDTO;
-import org.transferservice.exception.custom.CustomerAlreadyExistException;
+import org.transferservice.exception.custom.AccountAlreadyExistException;
 
 public interface IAuthenticator {
 
     /**
      * Register a new customer
      *
-     * @param createCustomerDTO customer details
-     * @return registered customer @{@link CustomerDTO}
-     * @throws CustomerAlreadyExistException if customer already exist
+     * @param createAccountDTO customer details
+     * @return registered customer @{@link AccountDTO}
+     * @throws AccountAlreadyExistException if customer already exist
      */
-    CustomerDTO register(CreateCustomerDTO createCustomerDTO) throws CustomerAlreadyExistException;
+    AccountDTO register(CreateAccountDTO createAccountDTO) throws AccountAlreadyExistException;
 
     /**
      * Login a customer

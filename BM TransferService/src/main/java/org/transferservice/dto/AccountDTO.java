@@ -5,9 +5,12 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.transferservice.dto.enums.AccountCurrency;
+import org.transferservice.dto.enums.Country;
+import org.transferservice.dto.enums.Gender;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.util.List;
+
 
 @Data
 @AllArgsConstructor
@@ -17,15 +20,18 @@ public class AccountDTO {
 
     private Long id;
 
-    private String accountNumber;
+    private String username;
 
-    private Double balance;
+    private String email;
 
-    private AccountCurrency currency;
+    private String phoneNumber;
 
-    private Boolean active;
+    private Country country;
 
-    private LocalDateTime createdAt;
+    private Gender gender;
 
-    private LocalDateTime updatedAt;
+    private LocalDate dateOfBirth;
+
+    private List<CardDTO> cards;
+
 }

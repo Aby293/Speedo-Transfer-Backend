@@ -16,13 +16,13 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.transferservice.service.security.AuthEntryPointJwt;
 import org.transferservice.service.security.AuthTokenFilter;
-import org.transferservice.service.security.CustomerDetailsServiceImpl;
+import org.transferservice.service.security.AccountDetailsServiceImpl;
 
 @Configuration
 @RequiredArgsConstructor
 public class WebSecurityConfig {
 
-    private final CustomerDetailsServiceImpl userDetailsService;
+    private final AccountDetailsServiceImpl userDetailsService;
 
     private final AuthEntryPointJwt unauthorizedHandler;
 

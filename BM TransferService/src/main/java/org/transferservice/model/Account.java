@@ -2,19 +2,24 @@ package org.transferservice.model;
 
 
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 import org.transferservice.dto.AccountDTO;
-import org.transferservice.dto.enums.AccountCurrency;
+import org.transferservice.dto.enums.Country;
+import org.transferservice.dto.enums.Gender;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 
 @Data
+@AllArgsConstructor
 @Entity
 @Builder
-@AllArgsConstructor
 @NoArgsConstructor
 public class Account {
 
@@ -22,40 +27,57 @@ public class Account {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
+    private String username;
+
     @Column(nullable = false, unique = true)
-    private String accountNumber;
+    private String email;
 
-    @Column(nullable = false)
-    private Double balance;
+    @Column(nullable = false, unique = true)
+    private String phoneNumber;
 
-    @Column(nullable = false)
     @Enumerated(EnumType.STRING)
-    private AccountCurrency currency;
+    private Country country;
 
-    @Builder.Default
+
+    @Enumerated(EnumType.STRING)
+    private Gender gender;
+
     @Column(nullable = false)
-    private Boolean active = true;
+    private LocalDate dateOfBirth;
+
+    @Column(nullable = false)
+    private String password;
 
     @CreationTimestamp
-    private LocalDateTime createdAt;
+    private LocalDateTime creationTimeStamp;
 
-    @UpdateTimestamp
-    private LocalDateTime updatedAt;
+    @OneToMany(fetch = FetchType.EAGER)
+    private List<Card> cards;
 
-    @OneToOne(mappedBy = "account")
-    private Customer customer;
+    @OneToMany(fetch = FetchType.LAZY)
+    private List<Card> favoriteRecipients;
+
 
 
     public AccountDTO toDTO() {
         return AccountDTO.builder()
                 .id(this.id)
-                .accountNumber(this.accountNumber)
-                .balance(this.balance)
-                .currency(this.currency)
-                .active(this.active)
-                .createdAt(this.createdAt)
-                .updatedAt(this.updatedAt)
+                .username(this.username)
+                .email(this.email)
+                .phoneNumber(this.phoneNumber)
+                .gender(this.gender)
+                .country(this.country)
+                .dateOfBirth(this.dateOfBirth)
+                .cards(this.cards.stream().map(Card::toDTO).toList())
                 .build();
     }
 
+    public boolean hasCard(String cardNo) {
+        return this.cards.stream().anyMatch(card -> card.getCardNumber().equals(cardNo));
+    }
+
+    public Card getCard(String cardNo){
+        return this.cards.stream().filter(card -> card.getCardNumber().equals(cardNo)).findFirst().get();
+    }
 }

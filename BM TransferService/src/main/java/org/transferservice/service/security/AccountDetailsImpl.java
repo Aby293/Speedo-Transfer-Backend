@@ -13,7 +13,7 @@ import java.util.Collections;
 @Builder
 @Data
 @AllArgsConstructor
-public class CustomerDetailsImpl implements UserDetails {
+public class AccountDetailsImpl implements UserDetails {
 
     private String email;
     private String password;

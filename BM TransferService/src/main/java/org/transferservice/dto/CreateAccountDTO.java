@@ -12,7 +12,7 @@ import java.time.LocalDate;
 
 
 @Data
-public class CreateCustomerDTO {
+public class CreateAccountDTO {
 
     private final Long id;
 

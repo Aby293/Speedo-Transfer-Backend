@@ -24,7 +24,7 @@ public class AuthTokenFilter extends OncePerRequestFilter {
     private JwtUtils jwtUtils;
 
     @Autowired
-    private CustomerDetailsServiceImpl customerDetailsService;
+    private AccountDetailsServiceImpl customerDetailsService;
 
     @Autowired
     private TokenBlacklist tokenBlacklist;
@@ -61,5 +61,9 @@ public class AuthTokenFilter extends OncePerRequestFilter {
             return headerAuth.substring(7);
         }
         return null;
+    }
+
+    public String getUserName(String jwt){
+        return jwtUtils.getUserNameFromJwtToken(jwt);
     }
 }

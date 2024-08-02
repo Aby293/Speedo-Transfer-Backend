@@ -2,7 +2,6 @@ package org.transferservice.service;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -10,16 +9,16 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
-import org.transferservice.dto.CreateCustomerDTO;
-import org.transferservice.dto.CustomerDTO;
-import org.transferservice.dto.enums.AccountCurrency;
+import org.transferservice.dto.CreateAccountDTO;
+import org.transferservice.dto.AccountDTO;
+import org.transferservice.dto.enums.CardCurrency;
 import org.transferservice.dto.enums.Country;
 import org.transferservice.dto.enums.Gender;
-import org.transferservice.exception.custom.CustomerAlreadyExistException;
+import org.transferservice.exception.custom.AccountAlreadyExistException;
+import org.transferservice.model.Card;
 import org.transferservice.model.Account;
-import org.transferservice.model.Customer;
+import org.transferservice.repository.CardRepository;
 import org.transferservice.repository.AccountRepository;
-import org.transferservice.repository.CustomerRepository;
 import org.transferservice.service.security.AuthenticatorService;
 import org.transferservice.service.security.JwtUtils;
 
@@ -39,10 +38,10 @@ public class AuthenticatorServiceTest {
 
 
     @MockBean
-    private CustomerRepository customerRepository;
+    private AccountRepository accountRepository;
 
     @MockBean
-    private AccountRepository accountRepository;
+    private CardRepository cardRepository;
 
     @MockBean
     private PasswordEncoder encoder;
@@ -54,27 +53,27 @@ public class AuthenticatorServiceTest {
     private JwtUtils jwtUtils;
 
     @Autowired
-    private CustomerService customerService;
+    private AccountService accountService;
     @Autowired
     private AuthenticatorService authenticatorService;
 
 
     @Test
-    void whenRegisterNewCustomerIsSuccessful() throws CustomerAlreadyExistException {
+    void whenRegisterNewCustomerIsSuccessful() throws AccountAlreadyExistException {
 
-        when(customerRepository.existsByEmail(anyString())).thenReturn(false);
-        when(customerRepository.existsByPhoneNumber(anyString())).thenReturn(false);
+        when(accountRepository.existsByEmail(anyString())).thenReturn(false);
+        when(accountRepository.existsByPhoneNumber(anyString())).thenReturn(false);
 
-        Account account = Account.builder()
-                .accountNumber(String.valueOf(new SecureRandom().nextInt(1000000000)))
+        Card card = Card.builder()
+                .cardNumber(String.valueOf(new SecureRandom().nextInt(1000000000)))
                 .active(true)
-                .currency(AccountCurrency.EGP)
+                .currency(CardCurrency.EGP)
                 .balance(0.0)
                 .build();
 
-        when(accountRepository.save(any(Account.class))).thenReturn(account);
+        when(cardRepository.save(any(Card.class))).thenReturn(card);
 
-        Customer savedCustomer = Customer
+        Account savedAccount = Account
                 .builder()
                 .email("test@example.com")
                 .username("User A")
@@ -83,42 +82,42 @@ public class AuthenticatorServiceTest {
                 .dateOfBirth(LocalDate.now())
                 .country(Country.EGYPT)
                 .password(this.encoder.encode("password"))
-                .account(this.accountRepository.save(account))
+                .card(this.cardRepository.save(card))
                 .build();
 
-        when(customerRepository.save(any(Customer.class))).thenReturn(savedCustomer);
+        when(accountRepository.save(any(Account.class))).thenReturn(savedAccount);
 
-        CreateCustomerDTO userSignUpRequest = new CreateCustomerDTO(1L,"User A","test@example.com","123456789",
+        CreateAccountDTO userSignUpRequest = new CreateAccountDTO(1L,"User A","test@example.com","123456789",
                 Country.EGYPT,Gender.MALE,LocalDate.now(),this.encoder.encode("password"));
 
-        CustomerDTO response = authenticatorService.register(userSignUpRequest);
+        AccountDTO response = authenticatorService.register(userSignUpRequest);
 
-        verify(customerRepository, times(1)).save(any());
+        verify(accountRepository, times(1)).save(any());
 
         Assertions.assertEquals("test@example.com", response.getEmail());
     }
 
     @Test
-    public void whenUserAlreadyExistingByEmailUserThrows() throws CustomerAlreadyExistException {
-        when(customerRepository.existsByEmail("test@example.com")).thenReturn(true);
-        when(customerRepository.existsByPhoneNumber(anyString())).thenReturn(false);
+    public void whenUserAlreadyExistingByEmailUserThrows() throws AccountAlreadyExistException {
+        when(accountRepository.existsByEmail("test@example.com")).thenReturn(true);
+        when(accountRepository.existsByPhoneNumber(anyString())).thenReturn(false);
 
-        CreateCustomerDTO userSignUpRequest = new CreateCustomerDTO(1L,"User A","test@example.com","123456789",
+        CreateAccountDTO userSignUpRequest = new CreateAccountDTO(1L,"User A","test@example.com","123456789",
                 Country.EGYPT,Gender.MALE,LocalDate.now(),this.encoder.encode("password"));
 
-        Assertions.assertThrows(CustomerAlreadyExistException.class, () -> authenticatorService.register(userSignUpRequest));
-        verify(customerRepository, times(1)).existsByEmail("test@example.com");
+        Assertions.assertThrows(AccountAlreadyExistException.class, () -> authenticatorService.register(userSignUpRequest));
+        verify(accountRepository, times(1)).existsByEmail("test@example.com");
     }
 
     @Test
-    public void whenUserAlreadyExistingByPhoneUserThrows() throws CustomerAlreadyExistException {
-        when(customerRepository.existsByPhoneNumber("123456789")).thenReturn(true);
-        when(customerRepository.existsByEmail(anyString())).thenReturn(false);
+    public void whenUserAlreadyExistingByPhoneUserThrows() throws AccountAlreadyExistException {
+        when(accountRepository.existsByPhoneNumber("123456789")).thenReturn(true);
+        when(accountRepository.existsByEmail(anyString())).thenReturn(false);
 
-        CreateCustomerDTO userSignUpRequest = new CreateCustomerDTO(1L,"User A","test@email.com","123456789",
+        CreateAccountDTO userSignUpRequest = new CreateAccountDTO(1L,"User A","test@email.com","123456789",
                 Country.EGYPT,Gender.MALE,LocalDate.now(),this.encoder.encode("password"));
 
-        Assertions.assertThrows(CustomerAlreadyExistException.class, () -> authenticatorService.register(userSignUpRequest));
-        verify(customerRepository, times(1)).existsByPhoneNumber("123456789");
+        Assertions.assertThrows(AccountAlreadyExistException.class, () -> authenticatorService.register(userSignUpRequest));
+        verify(accountRepository, times(1)).existsByPhoneNumber("123456789");
     }
 }

@@ -6,25 +6,25 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.transferservice.model.Customer;
-import org.transferservice.repository.CustomerRepository;
+import org.transferservice.model.Account;
+import org.transferservice.repository.AccountRepository;
 
 
 @Service
 @RequiredArgsConstructor
-public class CustomerDetailsServiceImpl implements UserDetailsService {
+public class AccountDetailsServiceImpl implements UserDetailsService {
 
-    private final CustomerRepository customerRepository;
+    private final AccountRepository accountRepository;
 
     @Override
     @Transactional
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
 
-        Customer customer = customerRepository.findUserByEmail(username)
+        Account account = accountRepository.findAccountByEmail(username)
                 .orElseThrow(() -> new UsernameNotFoundException("Customer Not Found with email: " + username));
 
-        return CustomerDetailsImpl.builder()
-                .email(customer.getEmail())
-                .password(customer.getPassword()).build();
+        return AccountDetailsImpl.builder()
+                .email(account.getEmail())
+                .password(account.getPassword()).build();
     }
 }
