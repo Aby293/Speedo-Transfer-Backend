@@ -22,6 +22,8 @@ import org.transferservice.repository.CardRepository;
 import org.transferservice.repository.AccountRepository;
 
 import java.security.SecureRandom;
+import java.util.ArrayList;
+import java.util.List;
 
 
 @Service
@@ -54,6 +56,8 @@ public class AuthenticatorService implements IAuthenticator {
                 .balance(0.0)
                 .build();
 
+        List<Card> cards = new ArrayList<>();
+        cards.add(this.cardRepository.save(card));
 
         Account account = Account
                 .builder()
@@ -64,7 +68,7 @@ public class AuthenticatorService implements IAuthenticator {
                 .dateOfBirth(createAccountDTO.getDateOfBirth())
                 .country(createAccountDTO.getCountry())
                 .password(this.encoder.encode(createAccountDTO.getPassword()))
-                .card(this.cardRepository.save(card))
+                .cards(cards)
                 .build();
 
         return this.accountRepository.save(account).toDTO();

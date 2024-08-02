@@ -52,11 +52,14 @@ public class Account {
     @CreationTimestamp
     private LocalDateTime creationTimeStamp;
 
-    @OneToMany(fetch = FetchType.EAGER)
+    @OneToMany(fetch = FetchType.LAZY)
     private List<Card> cards;
 
     @OneToMany(fetch = FetchType.LAZY)
     private List<Card> favoriteRecipients;
+
+    @OneToMany(fetch = FetchType.LAZY)
+    private List<Transaction> transactions;
 
 
 

@@ -26,14 +26,14 @@ public class AccountController {
 
     private final IAccount customerService;
 
-    @Operation(summary = "Update Customer by ID")
-    @ApiResponse(responseCode = "200", content = {@Content(schema = @Schema(implementation = AccountDTO.class), mediaType = "application/json")})
-    @ApiResponse(responseCode = "404", content = {@Content(schema = @Schema(implementation = ErrorDetails.class), mediaType = "application/json")})
-    @PutMapping("/{id}")
-    public Account updateCustomer(@PathVariable Long id,
-                                  @RequestBody UpdateAccountDTO updateAccountDTO) throws AccountNotFoundException {
-        return customerService.updateAccount(id, updateAccountDTO);
-    }
+//    @Operation(summary = "Update Customer by ID")
+//    @ApiResponse(responseCode = "200", content = {@Content(schema = @Schema(implementation = AccountDTO.class), mediaType = "application/json")})
+//    @ApiResponse(responseCode = "404", content = {@Content(schema = @Schema(implementation = ErrorDetails.class), mediaType = "application/json")})
+//    @PutMapping("/{id}")
+//    public Account updateCustomer(@PathVariable Long id,
+//                                  @RequestBody UpdateAccountDTO updateAccountDTO) throws AccountNotFoundException {
+//        return customerService.updateAccount(id, updateAccountDTO);
+//    }
 
     @Operation(summary = "Logout")
     @ApiResponse(responseCode = "200", content = {@Content(schema = @Schema(implementation = ResponseEntity.class), mediaType = "application/json")})

@@ -2,18 +2,25 @@ package org.transferservice.dto;
 
 
 import lombok.Data;
+import org.transferservice.dto.enums.Country;
+import org.transferservice.dto.enums.Gender;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Data
 public class UpdateAccountDTO {
 
-    private final String firstName;
-    private final String lastName;
-    private final String email;
-    private final String phoneNumber;
-    private final String address;
-    private final String nationality;
-    private final String nationalIdNumber;
-    private final LocalDate dateOfBirth;
+    private String username;
+
+    private String email;
+
+    private String phoneNumber;
+
+    private Country country;
+
+    private LocalDate dateOfBirth;
+
+    private String password;
+
 }

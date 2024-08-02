@@ -24,6 +24,8 @@ import org.transferservice.service.security.JwtUtils;
 
 import java.security.SecureRandom;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -73,6 +75,9 @@ public class AuthenticatorServiceTest {
 
         when(cardRepository.save(any(Card.class))).thenReturn(card);
 
+        List<Card> cards = new ArrayList<>();
+        cards.add(this.cardRepository.save(card));
+
         Account savedAccount = Account
                 .builder()
                 .email("test@example.com")
@@ -82,7 +87,7 @@ public class AuthenticatorServiceTest {
                 .dateOfBirth(LocalDate.now())
                 .country(Country.EGYPT)
                 .password(this.encoder.encode("password"))
-                .card(this.cardRepository.save(card))
+                .cards(cards)
                 .build();
 
         when(accountRepository.save(any(Account.class))).thenReturn(savedAccount);

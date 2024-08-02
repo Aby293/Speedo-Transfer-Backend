@@ -7,20 +7,18 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
-import org.transferservice.dto.CardDTO;
-import org.transferservice.dto.CreateCardDTO;
-import org.transferservice.dto.UpdateAccountDTO;
+import org.transferservice.dto.*;
 import org.transferservice.dto.enums.CardCurrency;
 import org.transferservice.exception.custom.*;
 import org.transferservice.model.Account;
 import org.transferservice.model.Card;
+import org.transferservice.model.Transaction;
 import org.transferservice.repository.AccountRepository;
 import org.transferservice.repository.CardRepository;
 import org.transferservice.service.security.AuthTokenFilter;
 import org.transferservice.service.security.TokenBlacklist;
 
 import java.util.List;
-import java.util.Optional;
 
 
 @Service
@@ -34,20 +32,28 @@ public class AccountService implements IAccount {
     private final CardRepository cardRepository;
 
     @Override
+    public AccountDTO viewAccount(HttpServletRequest request) throws AccountNotFoundException {
+        Account account = getCurrentAccount(request);
+        
+        return account.toDTO();
+    }
+
+    @Override
     @Transactional(isolation = Isolation.SERIALIZABLE)
-    public Account updateAccount(Long id, UpdateAccountDTO updateAccountDTO) throws AccountNotFoundException {
+    public AccountDTO updateAccountInformation(HttpServletRequest request, UpdateAccountDTO updateAccountDTO) throws AccountNotFoundException {
+        Account account = getCurrentAccount(request);
+        account.setUsername(updateAccountDTO.getUsername());
+        account.setEmail(updateAccountDTO.getEmail());
+        account.setPhoneNumber(updateAccountDTO.getPhoneNumber());
+        account.setDateOfBirth(updateAccountDTO.getDateOfBirth());
+        account.setCountry(updateAccountDTO.getCountry());
+        return accountRepository.save(account).toDTO();
 
+    }
 
-//        Account.setUsername(updateAccountDTO.getFirstName());
-//        Account.setEmail(updateAccountDTO.getEmail());
-//        Account.setPhoneNumber(updateAccountDTO.getPhoneNumber());
-//        Account.setAddress(updateAccountDTO.getAddress());
-//        Account.setNationality(updateAccountDTO.getNationality());
-//        Account.setNationalIdNumber(updateAccountDTO.getNationalIdNumber());
-//        Account.setDateOfBirth(updateAccountDTO.getDateOfBirth());
-
-        return null;
-
+    @Override
+    public void changePassword(UpdateAccountDTO accountDTO) {
+        accountDTO.setPassword(accountDTO.getPassword());
     }
 
 
@@ -86,9 +92,39 @@ public class AccountService implements IAccount {
         if(recepientCard.getCurrency()!=receivingCurrency)
             throw new InvalidCardCurrencyException("Recipient card currency does not match transfer currency, select " + recepientCard.getCurrency());
 
+        Account recipient = recepientCard.getAccount();
+
+        Transaction transaction = Transaction.builder()
+                .senderCard(senderCard)
+                .amount(sentAmount)
+                .isSuccessful(false)
+                .recipientCard(recepientCard)
+                .recipientAccount(recipient)
+                .senderAccount(sender)
+                .build();
+
         if(senderCard.getBalance()<sentAmount) {
+            List<Transaction> transactions = sender.getTransactions();
+            transactions.add(transaction);
+            sender.setTransactions(transactions);
             throw new InsufficientFundsException("Insufficient funds");
         }
+
+        transaction.setSuccessful(true);
+        List<Transaction> transactions = sender.getTransactions();
+        transactions.add(transaction);
+        sender.setTransactions(transactions);
+
+        transaction.setAmount(receivedAmount);
+        transaction.setRecipientAccount(sender);
+        transaction.setSenderAccount(recipient);
+        transaction.setSenderCard(senderCard);
+        transaction.setRecipientCard(recepientCard);
+
+        transactions = recipient.getTransactions();
+        transactions.add(transaction);
+        recipient.setTransactions(transactions);
+
 
         senderCard.setBalance(senderCard.getBalance() - sentAmount);
         recepientCard.setBalance(recepientCard.getBalance() + receivedAmount);
@@ -97,10 +133,7 @@ public class AccountService implements IAccount {
 
     @Override
     public List<CardDTO> addCard(CreateCardDTO cardDTO, HttpServletRequest request) throws AccountNotFoundException {
-        String jwt = authTokenFilter.parseJwt(request);
-        String email = authTokenFilter.getUserName(jwt);
-        Account account = accountRepository.findAccountByEmail(email)
-                .orElseThrow(()-> new AccountNotFoundException(String.format("Account with email %s not found", email)));;
+        Account account = getCurrentAccount(request);
 
         Card card = Card.builder()
                 .cardNumber(cardDTO.getCardNumber())
@@ -124,10 +157,7 @@ public class AccountService implements IAccount {
 
     @Override
     public void removeCard(CardDTO cardDTO, HttpServletRequest request) throws AccountNotFoundException, CardNotFoundException {
-        String jwt = authTokenFilter.parseJwt(request);
-        String email = authTokenFilter.getUserName(jwt);
-        Account account = accountRepository.findAccountByEmail(email)
-                .orElseThrow(()-> new AccountNotFoundException(String.format("Account with email %s not found", email)));
+        Account account = getCurrentAccount(request);
 
         Card card = cardRepository.findByCardNumber(cardDTO.getCardNumber())
                 .orElseThrow(()-> new CardNotFoundException("Card does not exist"));
@@ -142,19 +172,13 @@ public class AccountService implements IAccount {
 
     @Override
     public List<CardDTO> viewCards(HttpServletRequest request) throws AccountNotFoundException{
-        String jwt = authTokenFilter.parseJwt(request);
-        String email = authTokenFilter.getUserName(jwt);
-        Account account = accountRepository.findAccountByEmail(email)
-                .orElseThrow(()-> new AccountNotFoundException(String.format("Account with email %s not found", email)));
+        Account account = getCurrentAccount(request);
         return account.getCards().stream().map(Card::toDTO).toList();
     }
 
     @Override
     public void changeDefault(CardDTO cardDTO, HttpServletRequest request) throws AccountNotFoundException, CardNotFoundException {
-        String jwt = authTokenFilter.parseJwt(request);
-        String email = authTokenFilter.getUserName(jwt);
-        Account account = accountRepository.findAccountByEmail(email)
-                .orElseThrow(()-> new AccountNotFoundException(String.format("Account with email %s not found", email)));
+        Account account = getCurrentAccount(request);
 
         Card card = cardRepository.findByCardNumber(cardDTO.getCardNumber())
                 .orElseThrow(()-> new CardNotFoundException("Card does not exist"));
@@ -167,11 +191,8 @@ public class AccountService implements IAccount {
     }
 
     @Override
-    public List<CardDTO> addfavourite(CardDTO cardDTO, HttpServletRequest request) throws AccountNotFoundException, CardNotFoundException {
-        String jwt = authTokenFilter.parseJwt(request);
-        String email = authTokenFilter.getUserName(jwt);
-        Account account = accountRepository.findAccountByEmail(email)
-                .orElseThrow(()-> new AccountNotFoundException(String.format("Account with email %s not found", email)));
+    public List<CardDTO> addFavourite(CardDTO cardDTO, HttpServletRequest request) throws AccountNotFoundException, CardNotFoundException {
+        Account account = getCurrentAccount(request);
 
         Card card = cardRepository.findByCardNumber(cardDTO.getCardNumber())
                 .orElseThrow(()-> new CardNotFoundException("Card does not exist"));
@@ -189,11 +210,8 @@ public class AccountService implements IAccount {
     }
 
     @Override
-    public void removefavourite(CardDTO cardDTO, HttpServletRequest request) throws AccountNotFoundException, CardNotFoundException {
-        String jwt = authTokenFilter.parseJwt(request);
-        String email = authTokenFilter.getUserName(jwt);
-        Account account = accountRepository.findAccountByEmail(email)
-                .orElseThrow(()-> new AccountNotFoundException(String.format("Account with email %s not found", email)));
+    public void removeFavourite(CardDTO cardDTO, HttpServletRequest request) throws AccountNotFoundException, CardNotFoundException {
+        Account account = getCurrentAccount(request);
 
         Card card = cardRepository.findByCardNumber(cardDTO.getCardNumber())
                 .orElseThrow(()-> new CardNotFoundException("Card does not exist"));
@@ -205,25 +223,32 @@ public class AccountService implements IAccount {
     }
 
     @Override
-    public List<CardDTO> viewfavourites(HttpServletRequest request) throws AccountNotFoundException {
-        String jwt = authTokenFilter.parseJwt(request);
-        String email = authTokenFilter.getUserName(jwt);
-        Account account = accountRepository.findAccountByEmail(email)
-                .orElseThrow(()-> new AccountNotFoundException(String.format("Account with email %s not found", email)));
+    public List<CardDTO> viewFavourites(HttpServletRequest request) throws AccountNotFoundException {
+        Account account = getCurrentAccount(request);
         return account.getFavoriteRecipients().stream().map(Card::toDTO).toList();
     }
 
     @Override
+    public List<TransactionDTO> viewTransactions(HttpServletRequest request) throws AccountNotFoundException {
+        Account account = getCurrentAccount(request);
+        return account.getTransactions().stream().map(Transaction::toDTO).toList();
+    }
+
+    @Override
     public Double viewBalance(HttpServletRequest request) throws AccountNotFoundException, NoDefaultCardException {
-        String jwt = authTokenFilter.parseJwt(request);
-        String email = authTokenFilter.getUserName(jwt);
-        Account account = accountRepository.findAccountByEmail(email)
-                .orElseThrow(()-> new AccountNotFoundException(String.format("Account with email %s not found", email)));
+        Account account = getCurrentAccount(request);
 
         Card card = account.getCards().stream().filter(Card::isDefault).findFirst()
                 .orElseThrow(()->new NoDefaultCardException("Account does not have a default card"));
 
         return card.getBalance();
+    }
+
+    public Account getCurrentAccount(HttpServletRequest request) throws AccountNotFoundException {
+        String jwt = authTokenFilter.parseJwt(request);
+        String email = authTokenFilter.getUserName(jwt);
+        return accountRepository.findAccountByEmail(email)
+                .orElseThrow(()-> new AccountNotFoundException(String.format("Account with email %s not found", email)));
     }
 
 
