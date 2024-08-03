@@ -22,7 +22,7 @@ public class CreateCardDTO {
     private String expirationDate;
 
     @NotNull
-    private String CVV;
+    private String cvv;
 
     @NotNull
     private Boolean isDefault;

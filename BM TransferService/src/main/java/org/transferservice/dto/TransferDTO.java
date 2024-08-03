@@ -1,6 +1,5 @@
 package org.transferservice.dto;
 
-
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -12,20 +11,15 @@ import org.transferservice.dto.enums.CardCurrency;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class CardDTO {
-
+public class TransferDTO {
     @NotNull
-    private String cardNumber;
-
+    private CardDTO cardDTO;
     @NotNull
-    private String cardHolderName;
-
-    private String expirationDate;
-
-    private String cvv;
-
-    private Boolean isDefault;
-
-    private CardCurrency cardCurrency;
-
+    private double sentAmount;
+    @NotNull
+    private CardCurrency sendingCurrency;
+    @NotNull
+    private CardCurrency receivingCurrency;
+    @NotNull
+    private double receivedAmount;
 }

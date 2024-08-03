@@ -42,18 +42,25 @@ public class AccountService implements IAccount {
     @Transactional(isolation = Isolation.SERIALIZABLE)
     public AccountDTO updateAccountInformation(HttpServletRequest request, UpdateAccountDTO updateAccountDTO) throws AccountNotFoundException {
         Account account = getCurrentAccount(request);
-        account.setUsername(updateAccountDTO.getUsername());
-        account.setEmail(updateAccountDTO.getEmail());
-        account.setPhoneNumber(updateAccountDTO.getPhoneNumber());
-        account.setDateOfBirth(updateAccountDTO.getDateOfBirth());
-        account.setCountry(updateAccountDTO.getCountry());
+        if(updateAccountDTO.getUsername()!=null)
+            account.setUsername(updateAccountDTO.getUsername());
+        if(updateAccountDTO.getEmail()!=null)
+            account.setEmail(updateAccountDTO.getEmail());
+        if(updateAccountDTO.getPhoneNumber()!=null)
+            account.setPhoneNumber(updateAccountDTO.getPhoneNumber());
+        if(updateAccountDTO.getDateOfBirth()!=null)
+            account.setDateOfBirth(updateAccountDTO.getDateOfBirth());
+        if(updateAccountDTO.getCountry()!=null)
+            account.setCountry(updateAccountDTO.getCountry());
         return accountRepository.save(account).toDTO();
 
     }
 
     @Override
-    public void changePassword(UpdateAccountDTO accountDTO) {
-        accountDTO.setPassword(accountDTO.getPassword());
+    public void changePassword(UpdateAccountDTO accountDTO,HttpServletRequest request) throws AccountNotFoundException {
+        Account account = getCurrentAccount(request);
+        account.setPassword(accountDTO.getPassword());
+        accountRepository.save(account);
     }
 
 
@@ -68,8 +75,7 @@ public class AccountService implements IAccount {
 
 
     @Override
-    public void transferMoney(CardDTO cardDTO, double sentAmount, CardCurrency sendingCurrency,
-                              CardCurrency receivingCurrency, double receivedAmount, HttpServletRequest request)
+    public void transferMoney(TransferDTO transferDTO, HttpServletRequest request)
             throws CardNotFoundException, InsufficientFundsException, AccountNotFoundException, InvalidCardCurrencyException, NoDefaultCardException {
 
         String jwt = authTokenFilter.parseJwt(request);
@@ -80,30 +86,30 @@ public class AccountService implements IAccount {
         Card senderCard = sender.getCards().stream().filter(Card::isDefault).findFirst()
                 .orElseThrow(()->new NoDefaultCardException("Account does not have a default card"));
 
-        Card recepientCard = cardRepository.findByCardNumber(cardDTO.getCardNumber())
-                .orElseThrow(()->new CardNotFoundException(String.format("Card with card number %s not found", cardDTO.getCardNumber())));
+        Card recepientCard = cardRepository.findByCardNumber(transferDTO.getCardDTO().getCardNumber())
+                .orElseThrow(()->new CardNotFoundException(String.format("Card with card number %s not found", transferDTO.getCardDTO().getCardNumber())));
 
-        if(!recepientCard.getCardHolderName().equals(cardDTO.getCardHolderName()))
+        if(!recepientCard.getCardHolderName().equals(transferDTO.getCardDTO().getCardHolderName()))
             throw new CardNotFoundException("Card holder name does not match");
 
-        if(senderCard.getCurrency()!=sendingCurrency)
+        if(senderCard.getCurrency()!=transferDTO.getSendingCurrency())
             throw new InvalidCardCurrencyException("Sender card currency does not match transfer currency, select " + senderCard.getCurrency());
 
-        if(recepientCard.getCurrency()!=receivingCurrency)
+        if(recepientCard.getCurrency()!=transferDTO.getReceivingCurrency())
             throw new InvalidCardCurrencyException("Recipient card currency does not match transfer currency, select " + recepientCard.getCurrency());
 
         Account recipient = recepientCard.getAccount();
 
         Transaction transaction = Transaction.builder()
                 .senderCard(senderCard)
-                .amount(sentAmount)
+                .amount(transferDTO.getSentAmount())
                 .isSuccessful(false)
                 .recipientCard(recepientCard)
                 .recipientAccount(recipient)
                 .senderAccount(sender)
                 .build();
 
-        if(senderCard.getBalance()<sentAmount) {
+        if(senderCard.getBalance()<transferDTO.getSentAmount()) {
             List<Transaction> transactions = sender.getTransactions();
             transactions.add(transaction);
             sender.setTransactions(transactions);
@@ -115,7 +121,7 @@ public class AccountService implements IAccount {
         transactions.add(transaction);
         sender.setTransactions(transactions);
 
-        transaction.setAmount(receivedAmount);
+        transaction.setAmount(transferDTO.getReceivedAmount());
         transaction.setRecipientAccount(sender);
         transaction.setSenderAccount(recipient);
         transaction.setSenderCard(senderCard);
@@ -126,8 +132,10 @@ public class AccountService implements IAccount {
         recipient.setTransactions(transactions);
 
 
-        senderCard.setBalance(senderCard.getBalance() - sentAmount);
-        recepientCard.setBalance(recepientCard.getBalance() + receivedAmount);
+        senderCard.setBalance(senderCard.getBalance() - transferDTO.getSentAmount());
+        recepientCard.setBalance(recepientCard.getBalance() + transferDTO.getReceivedAmount());
+        cardRepository.save(senderCard);
+        cardRepository.save(recepientCard);
 
     }
 
@@ -138,17 +146,23 @@ public class AccountService implements IAccount {
         Card card = Card.builder()
                 .cardNumber(cardDTO.getCardNumber())
                 .cardHolderName(cardDTO.getCardHolderName())
-                .CVV(cardDTO.getCVV())
+                .cvv(cardDTO.getCvv())
                 .balance(10000.0)
                 .active(true)
+                .expirationDate(cardDTO.getExpirationDate())
                 .isDefault(false)
                 .account(account)
                 .currency(CardCurrency.EGP)
                 .build();
 
+        cardRepository.save(card);
+
+
         List<Card> accountCards = account.getCards();
+        if(accountCards.isEmpty()) card.setDefault(true);
         accountCards.add(card);
         account.setCards(accountCards);
+        cardRepository.save(card);
         accountRepository.save(account);
 
         return account.getCards().stream().map(Card::toDTO).toList();

@@ -1,6 +1,7 @@
 package org.transferservice.dto;
 
 
+import jakarta.annotation.Nullable;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -39,5 +40,7 @@ public class CreateAccountDTO {
     @NotNull
     @Size(min = 6)
     private final String password;
+
+    private final CreateCardDTO card;
 
 }

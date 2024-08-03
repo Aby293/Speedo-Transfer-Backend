@@ -28,12 +28,11 @@ public interface IAccount {
      */
     AccountDTO updateAccountInformation(HttpServletRequest request, UpdateAccountDTO updateAccountDTO) throws AccountNotFoundException;
 
-    void changePassword(UpdateAccountDTO accountDTO);
+    void changePassword(UpdateAccountDTO accountDTO,HttpServletRequest request) throws AccountNotFoundException;
 
     ResponseEntity<String> logout(HttpServletRequest request);
 
-    void transferMoney(CardDTO cardDTO, double sentAmount, CardCurrency sendingCurrency,
-                       CardCurrency receivingCurrency, double receivedAmount, HttpServletRequest request)
+    void transferMoney( TransferDTO transferDTO, HttpServletRequest request)
             throws CardNotFoundException, InsufficientFundsException, AccountNotFoundException, InvalidCardCurrencyException, NoDefaultCardException;
 
     Double viewBalance(HttpServletRequest request) throws AccountNotFoundException, CardNotFoundException, NoDefaultCardException;
@@ -53,6 +52,8 @@ public interface IAccount {
     List<CardDTO> viewFavourites(HttpServletRequest request) throws AccountNotFoundException;
 
     List<TransactionDTO> viewTransactions(HttpServletRequest request) throws AccountNotFoundException;
+
+
 
 
 

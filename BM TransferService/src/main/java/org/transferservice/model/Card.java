@@ -33,7 +33,7 @@
         private String expirationDate;
 
         @Column(nullable = false)
-        private String CVV;
+        private String cvv;
 
         @Column(nullable = false)
         private boolean isDefault;
@@ -60,7 +60,7 @@
                     .cardNumber(this.cardNumber)
                     .cardHolderName(this.cardHolderName)
                     .expirationDate(this.expirationDate)
-                    .CVV(this.CVV)
+                    .cvv(this.cvv)
                     .isDefault(this.isDefault)
                     .cardCurrency(this.currency)
                     .build();

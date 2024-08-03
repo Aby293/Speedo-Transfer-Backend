@@ -21,7 +21,6 @@ import org.transferservice.model.Account;
 import org.transferservice.repository.CardRepository;
 import org.transferservice.repository.AccountRepository;
 
-import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -48,16 +47,22 @@ public class AuthenticatorService implements IAuthenticator {
             throw new AccountAlreadyExistException(String.format("Customer with phone number %s already exists", createAccountDTO.getPhoneNumber()));
         }
 
-
-        Card card = Card.builder()
-                .cardNumber(String.valueOf(new SecureRandom().nextInt(1000000000)))
-                .active(true)
-                .currency(CardCurrency.EGP)
-                .balance(0.0)
-                .build();
-
         List<Card> cards = new ArrayList<>();
-        cards.add(this.cardRepository.save(card));
+        Card card = null;
+        if(createAccountDTO.getCard()!=null){
+            card = Card.builder()
+                    .cardNumber(createAccountDTO.getCard().getCardNumber())
+                    .active(true)
+                    .currency(CardCurrency.EGP)
+                    .cardHolderName(createAccountDTO.getCard().getCardHolderName())
+                    .balance(10000.0)
+                    .cvv(createAccountDTO.getCard().getCvv())
+                    .isDefault(true)
+                    .expirationDate(createAccountDTO.getCard().getExpirationDate())
+                    .build();
+
+            cards.add(this.cardRepository.save(card));
+        }
 
         Account account = Account
                 .builder()
@@ -70,6 +75,12 @@ public class AuthenticatorService implements IAuthenticator {
                 .password(this.encoder.encode(createAccountDTO.getPassword()))
                 .cards(cards)
                 .build();
+
+
+        if(card!=null){
+            card.setAccount(account);
+            cardRepository.save(card);
+        }
 
         return this.accountRepository.save(account).toDTO();
     }
