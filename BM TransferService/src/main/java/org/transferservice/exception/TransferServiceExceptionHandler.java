@@ -10,8 +10,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
-import org.transferservice.exception.custom.AccountAlreadyExistException;
-import org.transferservice.exception.custom.AccountNotFoundException;
+import org.transferservice.exception.custom.*;
 import org.transferservice.exception.response.ErrorDetails;
 import org.transferservice.exception.response.ValidationFailedResponse;
 import org.transferservice.exception.response.ViolationErrors;
@@ -22,16 +21,41 @@ import java.time.LocalDateTime;
 public class TransferServiceExceptionHandler {
 
     @ExceptionHandler(AccountAlreadyExistException.class)
-    public ResponseEntity<Object> customerAlreadyExistExceptionHandling(AccountAlreadyExistException exception, WebRequest request) {
+    public ResponseEntity<Object> accountAlreadyExistExceptionHandling(AccountAlreadyExistException exception, WebRequest request) {
         return new ResponseEntity<>(new ErrorDetails(LocalDateTime.now(), exception.getMessage(),
                 request.getDescription(false), HttpStatus.BAD_REQUEST), HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(AccountNotFoundException.class)
-    public ResponseEntity<Object> customerNotFoundExceptionHandling(AccountNotFoundException exception, WebRequest request) {
+    public ResponseEntity<Object> accountNotFoundExceptionHandling(AccountNotFoundException exception, WebRequest request) {
         return new ResponseEntity<>(new ErrorDetails(LocalDateTime.now(), exception.getMessage(),
                 request.getDescription(false), HttpStatus.NOT_FOUND), HttpStatus.NOT_FOUND);
     }
+
+    @ExceptionHandler(CardNotFoundException.class)
+    public ResponseEntity<Object> cardNotFoundExceptionHandling(CardNotFoundException exception, WebRequest request) {
+        return new ResponseEntity<>(new ErrorDetails(LocalDateTime.now(), exception.getMessage(),
+                request.getDescription(false), HttpStatus.NOT_FOUND), HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(InsufficientFundsException.class)
+    public ResponseEntity<Object> insufficientFundsExceptionHandling(InsufficientFundsException exception, WebRequest request) {
+        return new ResponseEntity<>(new ErrorDetails(LocalDateTime.now(), exception.getMessage(),
+                request.getDescription(false), HttpStatus.BAD_REQUEST), HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(InvalidCardCurrencyException.class)
+    public ResponseEntity<Object> invalidCardCurrencyExceptionHandling(InvalidCardCurrencyException exception, WebRequest request) {
+        return new ResponseEntity<>(new ErrorDetails(LocalDateTime.now(), exception.getMessage(),
+                request.getDescription(false), HttpStatus.BAD_REQUEST), HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(NoDefaultCardException.class)
+    public ResponseEntity<Object> noDefaultCardExceptionHandling(NoDefaultCardException exception, WebRequest request) {
+        return new ResponseEntity<>(new ErrorDetails(LocalDateTime.now(), exception.getMessage(),
+                request.getDescription(false), HttpStatus.BAD_REQUEST), HttpStatus.BAD_REQUEST);
+    }
+
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Object> methodArgumentNotValidExceptionHandling(MethodArgumentNotValidException exception) {
