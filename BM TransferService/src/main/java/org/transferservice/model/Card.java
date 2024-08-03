@@ -2,6 +2,7 @@
 
 
     import jakarta.persistence.*;
+    import jakarta.validation.constraints.Size;
     import lombok.*;
     import org.hibernate.annotations.CreationTimestamp;
     import org.transferservice.dto.CardDTO;
@@ -22,6 +23,7 @@
         private Long id;
 
         @Column(nullable = false, unique = true)
+        @Size(min = 16 , max = 16)
         private String cardNumber;
 
         @Column(nullable = false)

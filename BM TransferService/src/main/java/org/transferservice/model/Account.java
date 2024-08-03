@@ -2,6 +2,7 @@ package org.transferservice.model;
 
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -47,6 +48,7 @@ public class Account {
     private LocalDate dateOfBirth;
 
     @Column(nullable = false)
+    @Size(min = 8)
     private String password;
 
     @CreationTimestamp
