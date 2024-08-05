@@ -70,4 +70,8 @@ public class CountryCurrenciesService {
 
         repository.saveAll(currencies);
     }
+
+    public List<CountryCurrency> getCurrencies() {
+        return repository.findAll();
+    }
 }

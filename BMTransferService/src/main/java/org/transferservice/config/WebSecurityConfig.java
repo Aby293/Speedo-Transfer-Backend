@@ -33,7 +33,8 @@ public class WebSecurityConfig {
         http.csrf(AbstractHttpConfigurer::disable)
                 .exceptionHandling(e -> e.authenticationEntryPoint(unauthorizedHandler))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth.requestMatchers("/api/register","/api/login",
+                .authorizeHttpRequests(auth -> auth.requestMatchers("/api/register","/api/login","/db/countries",
+                                "/db/customers","/db/accounts","/db/transactions",
                                 "/h2-console/**",
                                 "/actuator/**",
                                 "/swagger-ui/**", "/v3/api-docs/**", "/swagger-resources/**", "/webjars/**").permitAll()
@@ -70,11 +71,13 @@ public class WebSecurityConfig {
     }
 
     @Bean
-    public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/**")
-                .allowedOrigins("*")
-                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
-                .allowedHeaders("*");
+    public WebMvcConfigurer corsConfigurer() {
+        return new WebMvcConfigurer() {
+            @Override
+            public void addCorsMappings(CorsRegistry registry) {
+                registry.addMapping("/greeting-javaconfig").allowedOrigins("*");
+            }
+        };
     }
 
 

@@ -4,6 +4,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
 import org.transferservice.dto.*;
 import org.transferservice.exception.custom.*;
+import org.transferservice.model.Account;
+import org.transferservice.model.Customer;
+import org.transferservice.model.Transaction;
 
 import java.util.List;
 
@@ -51,6 +54,10 @@ public interface ICustomer {
     List<AccountDTO> viewFavourites(HttpServletRequest request) throws CustomerNotFoundException;
 
     List<TransactionDTO> viewTransactions(HttpServletRequest request) throws CustomerNotFoundException;
+
+    List<Customer> getCustomerTable();
+    List<Account> getAccountTable();
+    List<Transaction> getTransactionTable();
 
 
 }

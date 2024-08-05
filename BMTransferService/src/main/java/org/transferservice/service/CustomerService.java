@@ -16,6 +16,7 @@ import org.transferservice.model.Transaction;
 import org.transferservice.repository.CountryCurrenciesRepository;
 import org.transferservice.repository.CustomerRepository;
 import org.transferservice.repository.AccountRepository;
+import org.transferservice.repository.TransactionRepository;
 import org.transferservice.service.security.AuthTokenFilter;
 import org.transferservice.service.security.TokenBlacklist;
 
@@ -32,6 +33,7 @@ public class CustomerService implements ICustomer {
     private final AuthTokenFilter authTokenFilter;
     private final AccountRepository accountRepository;
     private final CountryCurrenciesRepository countryCurrenciesRepository;
+    private final TransactionRepository transactionRepository;
 
     @Override
     public CustomerDTO viewCustomer(HttpServletRequest request) throws CustomerNotFoundException {
@@ -113,6 +115,8 @@ public class CustomerService implements ICustomer {
                 .senderCustomer(sender)
                 .build();
 
+        transactionRepository.save(transaction);
+
         if(senderAccount.getBalance()<transferDTO.getSentAmount()) {
             List<Transaction> transactions = sender.getTransactions();
             transactions.add(transaction);
@@ -121,6 +125,7 @@ public class CustomerService implements ICustomer {
         }
 
         transaction.setSuccessful(true);
+        transactionRepository.save(transaction);
         List<Transaction> transactions = sender.getTransactions();
         transactions.add(transaction);
         sender.setTransactions(transactions);
@@ -130,11 +135,13 @@ public class CustomerService implements ICustomer {
                         .getRateToDollar();
         double receivingRate = countryCurrenciesRepository.findByCurrency(transferDTO.getReceivingCurrency())
                 .orElseThrow(()->new InvalidAccountCurrencyException("Currency not found in database")).getRateToDollar();
+
         transaction.setAmount(sentInDollar/receivingRate);
         transaction.setRecipientCustomer(sender);
         transaction.setSenderCustomer(recipient);
         transaction.setSenderAccount(senderAccount);
         transaction.setRecipientAccount(recepientAccount);
+        transactionRepository.save(transaction);
 
         transactions = recipient.getTransactions();
         transactions.add(transaction);
@@ -277,6 +284,18 @@ public class CustomerService implements ICustomer {
         String email = authTokenFilter.getUserName(jwt);
         return customerRepository.findByEmail(email)
                 .orElseThrow(()-> new CustomerNotFoundException(String.format("Account with email %s not found", email)));
+    }
+
+    public List<Customer> getCustomerTable(){
+        return customerRepository.findAll();
+    }
+
+    public List<Account> getAccountTable(){
+        return accountRepository.findAll();
+    }
+
+    public List<Transaction> getTransactionTable(){
+        return transactionRepository.findAll();
     }
 
 

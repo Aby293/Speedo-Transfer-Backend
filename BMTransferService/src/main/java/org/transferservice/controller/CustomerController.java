@@ -14,11 +14,14 @@ import org.springframework.web.bind.annotation.*;
 import org.transferservice.dto.*;
 import org.transferservice.exception.custom.*;
 import org.transferservice.exception.response.ErrorDetails;
+import org.transferservice.model.Account;
+import org.transferservice.model.Customer;
+import org.transferservice.model.Transaction;
 import org.transferservice.service.ICustomer;
 
 import java.util.List;
 
-@CrossOrigin(origins = "http://localhost:4200")
+@CrossOrigin
 @RestController
 @RequiredArgsConstructor
 @Validated
@@ -154,6 +157,21 @@ public class CustomerController {
     public void changeDefault(AccountDTO accountDTO, HttpServletRequest httpServletRequest)
             throws CustomerNotFoundException, AccountNotFoundException {
         customerService.changeDefault(accountDTO,httpServletRequest);
+    }
+
+    @GetMapping("/db/customers")
+    public List<Customer> customers() {
+        return customerService.getCustomerTable();
+    }
+
+    @GetMapping("/db/accounts")
+    public List<Account> accounts() {
+        return customerService.getAccountTable();
+    }
+
+    @GetMapping("/db/transactions")
+    public List<Transaction> transactions() {
+        return customerService.getTransactionTable();
     }
 
 
