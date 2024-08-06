@@ -105,6 +105,10 @@ public class CustomerService implements ICustomer {
             throw new InvalidAccountCurrencyException("Recipient account currency does not match transfer currency, select " + recepientAccount.getCurrency());
 
         Customer recipient = recepientAccount.getCustomer();
+        accountRepository.save(recepientAccount);
+        accountRepository.save(senderAccount);
+        customerRepository.save(sender);
+        customerRepository.save(recipient);
 
         Transaction transaction = Transaction.builder()
                 .senderAccount(senderAccount)
@@ -147,6 +151,8 @@ public class CustomerService implements ICustomer {
         transactions.add(transaction);
         recipient.setTransactions(transactions);
 
+        customerRepository.save(sender);
+        customerRepository.save(recipient);
 
         senderAccount.setBalance(senderAccount.getBalance() - transferDTO.getSentAmount());
         recepientAccount.setBalance(recepientAccount.getBalance() + sentInDollar/receivingRate);

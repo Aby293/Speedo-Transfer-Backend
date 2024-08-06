@@ -159,17 +159,17 @@ public class CustomerController {
         customerService.changeDefault(accountDTO,httpServletRequest);
     }
 
-    @GetMapping("/db/customers")
+    @PostMapping("/db/customers")
     public List<Customer> customers() {
         return customerService.getCustomerTable();
     }
 
-    @GetMapping("/db/accounts")
+    @PostMapping("/db/accounts")
     public List<Account> accounts() {
         return customerService.getAccountTable();
     }
 
-    @GetMapping("/db/transactions")
+    @PostMapping("/db/transactions")
     public List<Transaction> transactions() {
         return customerService.getTransactionTable();
     }

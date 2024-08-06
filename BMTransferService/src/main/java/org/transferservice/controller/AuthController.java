@@ -51,7 +51,7 @@ public class AuthController {
         return this.authenticatorService.login(loginRequestDTO);
     }
 
-    @GetMapping("/db/countries")
+    @PostMapping("/db/countries")
     public List<CountryCurrency> countryCurrencies() {
         return countryCurrenciesService.getCurrencies();
     }
