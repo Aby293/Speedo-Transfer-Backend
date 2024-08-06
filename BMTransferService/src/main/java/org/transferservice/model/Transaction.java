@@ -20,7 +20,8 @@ import java.util.UUID;
 public class Transaction {
 
     @Id
-    private UUID transactionId = UUID.randomUUID();
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
     @CreationTimestamp
     private LocalDateTime transactionDate;
@@ -52,7 +53,7 @@ public class Transaction {
                 .senderAccount(this.senderAccount.toDTO())
                 .transactionDate(this.transactionDate)
                 .amount(this.amount)
-                .transactionId(this.transactionId)
+                .transactionId(this.id)
                 .build();
     }
 

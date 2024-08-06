@@ -64,7 +64,7 @@ public class CountryCurrenciesService {
                         .flag("\ud83c\uddf8\ud83c\udde6")
                         .country(Country.KSA)
                         .currencySymbol("﷼")
-                        .rateToDollar(0.020)
+                        .rateToDollar(0.027)
                         .build()
         );
 

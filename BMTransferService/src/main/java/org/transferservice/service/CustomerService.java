@@ -21,6 +21,7 @@ import org.transferservice.service.security.AuthTokenFilter;
 import org.transferservice.service.security.TokenBlacklist;
 
 import java.util.List;
+import java.util.UUID;
 
 
 @Service
@@ -28,7 +29,7 @@ import java.util.List;
 @Slf4j
 public class CustomerService implements ICustomer {
 
-    private final CustomerRepository customerRepository;
+    private final CustomerRepository customerRepository ;
     private final TokenBlacklist tokenBlacklist;
     private final AuthTokenFilter authTokenFilter;
     private final AccountRepository accountRepository;
@@ -107,8 +108,10 @@ public class CustomerService implements ICustomer {
         Customer recipient = recepientAccount.getCustomer();
         accountRepository.save(recepientAccount);
         accountRepository.save(senderAccount);
+        System.out.println("1");
         customerRepository.save(sender);
         customerRepository.save(recipient);
+        System.out.println("2");
 
         Transaction transaction = Transaction.builder()
                 .senderAccount(senderAccount)
@@ -121,12 +124,15 @@ public class CustomerService implements ICustomer {
 
         transactionRepository.save(transaction);
 
+        System.out.println("3");
+
         if(senderAccount.getBalance()<transferDTO.getSentAmount()) {
             List<Transaction> transactions = sender.getTransactions();
             transactions.add(transaction);
             sender.setTransactions(transactions);
             throw new InsufficientFundsException("Insufficient funds");
         }
+        System.out.println("4");
 
         transaction.setSuccessful(true);
         transactionRepository.save(transaction);
@@ -134,30 +140,44 @@ public class CustomerService implements ICustomer {
         transactions.add(transaction);
         sender.setTransactions(transactions);
 
+        System.out.println("5");
+
         double sentInDollar = transferDTO.getSentAmount()*countryCurrenciesRepository.findByCurrency(transferDTO.getSendingCurrency())
                         .orElseThrow(()->new InvalidAccountCurrencyException("Currency not found in database"))
                         .getRateToDollar();
         double receivingRate = countryCurrenciesRepository.findByCurrency(transferDTO.getReceivingCurrency())
                 .orElseThrow(()->new InvalidAccountCurrencyException("Currency not found in database")).getRateToDollar();
 
-        transaction.setAmount(sentInDollar/receivingRate);
-        transaction.setRecipientCustomer(sender);
-        transaction.setSenderCustomer(recipient);
-        transaction.setSenderAccount(senderAccount);
-        transaction.setRecipientAccount(recepientAccount);
-        transactionRepository.save(transaction);
+        System.out.println("6");
+
+        Transaction transaction2 = Transaction.builder()
+                .senderAccount(recepientAccount)
+                .amount(sentInDollar/receivingRate)
+                .isSuccessful(true)
+                .recipientAccount(senderAccount)
+                .recipientCustomer(sender)
+                .senderCustomer(recipient)
+                .build();
+
+        transactionRepository.save(transaction2);
+
+        System.out.println("7");
 
         transactions = recipient.getTransactions();
-        transactions.add(transaction);
+        transactions.add(transaction2);
         recipient.setTransactions(transactions);
 
         customerRepository.save(sender);
         customerRepository.save(recipient);
 
+        System.out.println("8");
+
         senderAccount.setBalance(senderAccount.getBalance() - transferDTO.getSentAmount());
         recepientAccount.setBalance(recepientAccount.getBalance() + sentInDollar/receivingRate);
+        System.out.println("9");
         accountRepository.save(senderAccount);
         accountRepository.save(recepientAccount);
+
 
     }
 
@@ -216,13 +236,19 @@ public class CustomerService implements ICustomer {
     public void changeDefault(AccountDTO accountDTO, HttpServletRequest request) throws CustomerNotFoundException, AccountNotFoundException {
         Customer customer = getCurrentCustomer(request);
 
-        Account account = accountRepository.findByAccountNumber(accountDTO.getAccountNumber())
+            Account account = accountRepository.findByAccountNumber(accountDTO.getAccountNumber())
                 .orElseThrow(()-> new AccountNotFoundException("Account does not exist"));
         if(!account.getCustomer().equals(customer)){
-            throw new AccountNotFoundException("Account does not exist");
+            throw new AccountNotFoundException("Customer does not have this account");
         }
 
-        customer.getAccounts().forEach(c -> c.setDefault(c.getAccountNumber().equals(accountDTO.getAccountNumber())));
+        List<Account> myAccounts = customer.getAccounts();
+
+        for (Account myAccount : myAccounts) {
+            myAccount.setDefault(myAccount.equals(account));
+            accountRepository.save(myAccount);
+        }
+        customer.setAccounts(myAccounts);
         customerRepository.save(customer);
     }
 
@@ -252,10 +278,10 @@ public class CustomerService implements ICustomer {
         Account account = accountRepository.findByAccountNumber(accountNumber)
                 .orElseThrow(()-> new AccountNotFoundException("Account does not exist"));
 
-        List<Account> myAccounts = customer.getAccounts();
+        List<Account> myAccounts = customer.getFavoriteRecipients();
         if(!myAccounts.remove(account))
             throw new AccountNotFoundException("Account does not exist");
-        customer.setAccounts(myAccounts);
+        customer.setFavoriteRecipients(myAccounts);
         customerRepository.save(customer);
     }
 
