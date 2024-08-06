@@ -159,6 +159,15 @@ public class CustomerController {
         customerService.changeDefault(accountDTO,httpServletRequest);
     }
 
+    @Operation(summary = "View default account")
+    @ApiResponse(responseCode = "200")
+    @ApiResponse(responseCode = "404", content = {@Content(schema = @Schema(implementation = ErrorDetails.class), mediaType = "application/json")})
+    @GetMapping("/api/accounts/default")
+    public AccountDTO getDefault(HttpServletRequest httpServletRequest)
+            throws CustomerNotFoundException{
+        return customerService.getDefault(httpServletRequest).toDTO();
+    }
+
     @GetMapping("/db/customers")
     public List<Customer> customers() {
         return customerService.getCustomerTable();

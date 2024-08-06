@@ -20,7 +20,7 @@ import java.util.UUID;
 public class Transaction {
 
     @Id
-    private UUID transactionId = UUID.randomUUID();
+    private int transactionId;
 
     @CreationTimestamp
     private LocalDateTime transactionDate;

@@ -55,6 +55,8 @@ public interface ICustomer {
 
     List<TransactionDTO> viewTransactions(HttpServletRequest request) throws CustomerNotFoundException;
 
+    Account getDefault(HttpServletRequest request) throws CustomerNotFoundException;
+
     List<Customer> getCustomerTable();
     List<Account> getAccountTable();
     List<Transaction> getTransactionTable();

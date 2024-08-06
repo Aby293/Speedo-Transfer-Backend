@@ -3,7 +3,11 @@ package org.transferservice.service;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.RandomStringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,7 +24,9 @@ import org.transferservice.repository.TransactionRepository;
 import org.transferservice.service.security.AuthTokenFilter;
 import org.transferservice.service.security.TokenBlacklist;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 
 @Service
@@ -34,11 +40,11 @@ public class CustomerService implements ICustomer {
     private final AccountRepository accountRepository;
     private final CountryCurrenciesRepository countryCurrenciesRepository;
     private final TransactionRepository transactionRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     public CustomerDTO viewCustomer(HttpServletRequest request) throws CustomerNotFoundException {
         Customer customer = getCurrentCustomer(request);
-        
         return customer.toDTO();
     }
 
@@ -64,7 +70,7 @@ public class CustomerService implements ICustomer {
     public void changePassword(UpdatePasswordDTO passwordDTO, HttpServletRequest request) throws CustomerNotFoundException, PasswordMismatchException {
         Customer customer = getCurrentCustomer(request);
 
-        if(!customer.getPassword().equals(passwordDTO.getCurrentPassword()))
+        if(!this.passwordEncoder.matches(passwordDTO.getCurrentPassword(), customer.getPassword()))
             throw new PasswordMismatchException("Current password does not match entered password");
 
         customer.setPassword(passwordDTO.getNewPassword());
@@ -81,16 +87,14 @@ public class CustomerService implements ICustomer {
     }
 
 
-
     @Override
     public void transferMoney(TransferDTO transferDTO, HttpServletRequest request)
             throws AccountNotFoundException, InsufficientFundsException, CustomerNotFoundException, InvalidAccountCurrencyException, NoDefaultAccountException {
 
-
         Customer sender = getCurrentCustomer(request);
+        List<Transaction> transactions = sender.getTransactions();
 
-        Account senderAccount = sender.getAccounts().stream().filter(Account::isDefault).findFirst()
-                .orElseThrow(()->new NoDefaultAccountException("Customer does not have a default account"));
+        Account senderAccount = sender.getAccounts().stream().filter(Account::isDefault).findFirst().get();
 
         Account recepientAccount = accountRepository.findByAccountNumber(transferDTO.getAccountDTO().getAccountNumber())
                 .orElseThrow(()->new AccountNotFoundException(String.format("Account with account number %s not found", transferDTO.getAccountDTO().getAccountNumber())));
@@ -113,12 +117,13 @@ public class CustomerService implements ICustomer {
                 .recipientAccount(recepientAccount)
                 .recipientCustomer(recipient)
                 .senderCustomer(sender)
+                .transactionDate(LocalDateTime.now())
+                .transactionId(transactions.size()+1)
                 .build();
 
         transactionRepository.save(transaction);
 
         if(senderAccount.getBalance()<transferDTO.getSentAmount()) {
-            List<Transaction> transactions = sender.getTransactions();
             transactions.add(transaction);
             sender.setTransactions(transactions);
             throw new InsufficientFundsException("Insufficient funds");
@@ -126,7 +131,6 @@ public class CustomerService implements ICustomer {
 
         transaction.setSuccessful(true);
         transactionRepository.save(transaction);
-        List<Transaction> transactions = sender.getTransactions();
         transactions.add(transaction);
         sender.setTransactions(transactions);
 
@@ -159,20 +163,24 @@ public class CustomerService implements ICustomer {
     public List<AccountDTO> addAccount(CreateAccountDTO accountDTO, HttpServletRequest request) throws CustomerNotFoundException {
         Customer customer = getCurrentCustomer(request);
 
+        String accountNum = RandomStringUtils.randomNumeric(16);
+        while (this.accountRepository.findByAccountNumber(accountNum).isPresent()) {
+            accountNum = RandomStringUtils.randomNumeric(16);
+        }
+
         Account account = Account.builder()
-                .accountNumber(accountDTO.getAccountNumber())
-                .accountHolderName(accountDTO.getAccountHolderName())
-                .cvv(accountDTO.getCvv())
+                .accountNumber(accountNum)
+                .accountHolderName(customer.getUsername())
+                .cvv(RandomStringUtils.randomNumeric(3))
                 .balance(10000.0)
                 .active(true)
-                .expirationDate(accountDTO.getExpirationDate())
-                .isDefault(false)
+                .expirationDate("28/09")
+                .isDefault(accountDTO.getIsDefault())
                 .customer(customer)
                 .currency(AccountCurrency.EGP)
                 .build();
 
         accountRepository.save(account);
-
 
         List<Account> customerAccounts = customer.getAccounts();
         if(customerAccounts.isEmpty()) account.setDefault(true);
@@ -210,14 +218,27 @@ public class CustomerService implements ICustomer {
     public void changeDefault(AccountDTO accountDTO, HttpServletRequest request) throws CustomerNotFoundException, AccountNotFoundException {
         Customer customer = getCurrentCustomer(request);
 
+        Account defaultacc = getDefault(customer);
+
         Account account = accountRepository.findByAccountNumber(accountDTO.getAccountNumber())
                 .orElseThrow(()-> new AccountNotFoundException("Account does not exist"));
         if(!account.getCustomer().equals(customer)){
             throw new AccountNotFoundException("Account does not exist");
         }
-
-        customer.getAccounts().forEach(c -> c.setDefault(c.getAccountNumber().equals(accountDTO.getAccountNumber())));
+        defaultacc.setDefault(false);
+        account.setDefault(true);
+//        customer.getAccounts().forEach(c -> c.setDefault(c.getAccountNumber().equals(accountDTO.getAccountNumber())));
         customerRepository.save(customer);
+    }
+
+    @Override
+    public Account getDefault(HttpServletRequest request) throws CustomerNotFoundException{
+        Customer customer = getCurrentCustomer(request);
+        return customer.getAccounts().stream().filter(c -> c.isDefault()).findFirst().get();
+    }
+
+    public Account getDefault(Customer customer){
+        return customer.getAccounts().stream().filter(c -> c.isDefault()).findFirst().get();
     }
 
     @Override
@@ -246,10 +267,11 @@ public class CustomerService implements ICustomer {
         Account account = accountRepository.findByAccountNumber(accountNumber)
                 .orElseThrow(()-> new AccountNotFoundException("Account does not exist"));
 
-        List<Account> myAccounts = customer.getAccounts();
+        List<Account> myAccounts = customer.getFavoriteRecipients();
         if(!myAccounts.remove(account))
             throw new AccountNotFoundException("Account does not exist");
-        customer.setAccounts(myAccounts);
+
+        customer.setFavoriteRecipients(myAccounts);
         customerRepository.save(customer);
     }
 
@@ -276,7 +298,7 @@ public class CustomerService implements ICustomer {
                 .orElseThrow(()->new InvalidAccountCurrencyException("No such currency in the database"))
                 .getCurrencySymbol();
 
-        return symbol+account.getBalance();
+        return symbol + " " + account.getBalance();
     }
 
     public Customer getCurrentCustomer(HttpServletRequest request) throws CustomerNotFoundException {

@@ -14,7 +14,7 @@ import java.util.UUID;
 @Builder
 public class TransactionDTO {
 
-    private UUID transactionId ;
+    private int transactionId;
 
     private LocalDateTime transactionDate;
 

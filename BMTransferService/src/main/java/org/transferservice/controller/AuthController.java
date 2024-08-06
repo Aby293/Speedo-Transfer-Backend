@@ -56,7 +56,4 @@ public class AuthController {
         return countryCurrenciesService.getCurrencies();
     }
 
-
-
-
 }
